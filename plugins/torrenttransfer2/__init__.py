@@ -116,8 +116,8 @@ class TorrentTransfer2(_PluginBase):
 
         # 启动定时任务 & 立即运行一次
         if self.get_state() or self._onlyonce:
-            self.fromdownloaderobj = self.__get_downloader_obj(self._fromdownloader)
-            self.todownloaderobj = self.__get_downloader_obj(self._todownloader)
+            self.fromdownloaderobj = self.__get_downloader_obj(self._fromdownloader, self._fromhost, self._fromport, self._fromusername, self._frompassword)
+            self.todownloaderobj = self.__get_downloader_obj(self._todownloader, self._tohost, self._toport, self._tousername, self._topassword)
             # 检查配置
             if self._fromtorrentpath and not Path(self._fromtorrentpath).exists():
                 logger.error(f"源下载器种子文件保存路径不存在：{self._fromtorrentpath}")
@@ -661,11 +661,12 @@ class TorrentTransfer2(_PluginBase):
     def get_page(self) -> List[dict]:
         pass
 
-    def __get_downloader_obj(self, dtype: str):
+    def __get_downloader_obj(self, dtype: str,
+                             host: str, port: str, username: str, password: str, ):
         if dtype == "qbittorrent":
-            return Qbittorrent(self._fromhost, self._fromport, self._fromusername, self._frompassword)
+            return Qbittorrent(host, port, username, password)
         elif dtype == "transmission":
-            return Transmission(self._tohost, self._toport, self._tousername, self._topassword)
+            return Transmission(host, port, username, password)
         else:
             return None 
 
