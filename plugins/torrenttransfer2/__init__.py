@@ -18,8 +18,7 @@ from app.plugins import _PluginBase
 from app.schemas import NotificationType
 from app.utils.string import StringUtils
 
-
-class TorrentTransfer(_PluginBase):
+class TorrentTransfer2(_PluginBase):
     # 插件名称
     plugin_name = "自动转移做种"
     # 插件描述
@@ -27,13 +26,13 @@ class TorrentTransfer(_PluginBase):
     # 插件图标
     plugin_icon = "seed.png"
     # 插件版本
-    plugin_version = "1.3"
+    plugin_version = "1.3.1"
     # 插件作者
     plugin_author = "jxxghp"
     # 作者主页
     author_url = "https://github.com/jxxghp"
     # 插件配置项ID前缀
-    plugin_config_prefix = "torrenttransfer_"
+    plugin_config_prefix = "torrenttransfer2_"
     # 加载顺序
     plugin_order = 18
     # 可使用的用户级别
@@ -41,23 +40,34 @@ class TorrentTransfer(_PluginBase):
 
     # 私有属性
     _scheduler = None
-    qb = None
-    tr = None
+    fromdownloaderobj = None
+    todownloaderobj = None
     torrent = None
     # 开关
     _enabled = False
     _cron = None
     _onlyonce = False
+
     _fromdownloader = None
-    _todownloader = None
+    _fromtorrentpath = None
     _frompath = None
+    _fromusername = None
+    _frompassword = None
+    _fromhost = None
+    _fromport = None
+
+    _todownloader = None
     _topath = None
+    _tousername = None
+    _topassword = None
+    _tohost = None
+    _toport = None
+
     _notify = False
     _nolabels = None
     _includelabels = None
     _nopaths = None
     _deletesource = False
-    _fromtorrentpath = None
     _autostart = False
     _transferemptylabel = False
     # 退出事件
@@ -78,29 +88,42 @@ class TorrentTransfer(_PluginBase):
             self._notify = config.get("notify")
             self._nolabels = config.get("nolabels")
             self._includelabels = config.get("includelabels")
-            self._frompath = config.get("frompath")
-            self._topath = config.get("topath")
+
             self._fromdownloader = config.get("fromdownloader")
-            self._todownloader = config.get("todownloader")
-            self._deletesource = config.get("deletesource")
             self._fromtorrentpath = config.get("fromtorrentpath")
+            self._frompath = config.get("frompath")
+            self._fromusername = config.get("fromusername")
+            self._frompassword = config.get("frompassword")
+            self._fromhost = config.get("fromhost")
+            self._fromport = config.get("fromport")
+
+            self._todownloader = config.get("todownloader")
+            self._topath = config.get("topath")
+            self._tousername = config.get("tousername")
+            self._topassword = config.get("topassword")
+            self._tohost = config.get("tohost")
+            self._toport = config.get("toport")
+
+            self._deletesource = config.get("deletesource")
             self._nopaths = config.get("nopaths")
             self._autostart = config.get("autostart")
             self._transferemptylabel = config.get("transferemptylabel")
+
+            self._recheck_torrents = {}
 
         # 停止现有任务
         self.stop_service()
 
         # 启动定时任务 & 立即运行一次
         if self.get_state() or self._onlyonce:
-            self.qb = Qbittorrent()
-            self.tr = Transmission()
+            self.fromdownloaderobj = self.__get_downloader_obj(self._fromdownloader)
+            self.todownloaderobj = self.__get_downloader_obj(self._todownloader)
             # 检查配置
             if self._fromtorrentpath and not Path(self._fromtorrentpath).exists():
                 logger.error(f"源下载器种子文件保存路径不存在：{self._fromtorrentpath}")
                 self.systemmessage.put(f"源下载器种子文件保存路径不存在：{self._fromtorrentpath}")
                 return
-            if self._fromdownloader == self._todownloader:
+            if self._fromhost == self._tohost and self._fromport == self._toport:
                 logger.error(f"源下载器和目的下载器不能相同")
                 self.systemmessage.put(f"源下载器和目的下载器不能相同")
                 return
@@ -126,12 +149,23 @@ class TorrentTransfer(_PluginBase):
                     "notify": self._notify,
                     "nolabels": self._nolabels,
                     "includelabels": self._includelabels,
-                    "frompath": self._frompath,
-                    "topath": self._topath,
+
                     "fromdownloader": self._fromdownloader,
-                    "todownloader": self._todownloader,
-                    "deletesource": self._deletesource,
                     "fromtorrentpath": self._fromtorrentpath,
+                    "frompath": self._frompath,
+                    "fromusername": self._fromusername,
+                    "frompassword": self._frompassword,
+                    "fromhost": self._fromhost,
+                    "fromport": self._fromport,
+
+                    "todownloader": self._todownloader,
+                    "topath": self._topath,
+                    "tousername": self._tousername,
+                    "topassword": self._topassword,
+                    "tohost": self._tohost,
+                    "toport": self._toport,
+
+                    "deletesource": self._deletesource,
                     "nopaths": self._nopaths,
                     "autostart": self._autostart,
                     "transferemptylabel": self._transferemptylabel
@@ -170,7 +204,7 @@ class TorrentTransfer(_PluginBase):
         if self.get_state():
             return [
                 {
-                    "id": "TorrentTransfer",
+                    "id": "TorrentTransfer2",
                     "name": "转移做种服务",
                     "trigger": CronTrigger.from_crontab(self._cron),
                     "func": self.transfer,
@@ -325,6 +359,70 @@ class TorrentTransfer(_PluginBase):
                                     {
                                         'component': 'VTextField',
                                         'props': {
+                                            'model': 'fromhost',
+                                            'label': '源下载器ip'
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                'component': 'VCol',
+                                'props': {
+                                    'cols': 12,
+                                    'md': 6
+                                },
+                                'content': [
+                                    {
+                                        'component': 'VTextField',
+                                        'props': {
+                                            'model': 'fromport',
+                                            'label': '源下载器端口'
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                'component': 'VCol',
+                                'props': {
+                                    'cols': 12,
+                                    'md': 6
+                                },
+                                'content': [
+                                    {
+                                        'component': 'VTextField',
+                                        'props': {
+                                            'model': 'fromusername',
+                                            'label': '源下载器用户名'
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                'component': 'VCol',
+                                'props': {
+                                    'cols': 12,
+                                    'md': 6
+                                },
+                                'content': [
+                                    {
+                                        'component': 'VTextField',
+                                        'props': {
+                                            'model': 'frompassword',
+                                            'label': '源下载器密码'
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                'component': 'VCol',
+                                'props': {
+                                    'cols': 12,
+                                    'md': 6
+                                },
+                                'content': [
+                                    {
+                                        'component': 'VTextField',
+                                        'props': {
                                             'model': 'fromtorrentpath',
                                             'label': '源下载器种子文件路径',
                                             'placeholder': 'BT_backup、torrents'
@@ -369,6 +467,70 @@ class TorrentTransfer(_PluginBase):
                                                 {'title': 'Qbittorrent', 'value': 'qbittorrent'},
                                                 {'title': 'Transmission', 'value': 'transmission'}
                                             ]
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                'component': 'VCol',
+                                'props': {
+                                    'cols': 12,
+                                    'md': 6
+                                },
+                                'content': [
+                                    {
+                                        'component': 'VTextField',
+                                        'props': {
+                                            'model': 'tohost',
+                                            'label': '目的下载器ip'
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                'component': 'VCol',
+                                'props': {
+                                    'cols': 12,
+                                    'md': 6
+                                },
+                                'content': [
+                                    {
+                                        'component': 'VTextField',
+                                        'props': {
+                                            'model': 'toport',
+                                            'label': '目的下载器端口'
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                'component': 'VCol',
+                                'props': {
+                                    'cols': 12,
+                                    'md': 6
+                                },
+                                'content': [
+                                    {
+                                        'component': 'VTextField',
+                                        'props': {
+                                            'model': 'tousername',
+                                            'label': '目的下载器用户名'
+                                        }
+                                    }
+                                ]
+                            },
+                            {
+                                'component': 'VCol',
+                                'props': {
+                                    'cols': 12,
+                                    'md': 6
+                                },
+                                'content': [
+                                    {
+                                        'component': 'VTextField',
+                                        'props': {
+                                            'model': 'topassword',
+                                            'label': '目的下载器密码'
                                         }
                                     }
                                 ]
@@ -475,12 +637,22 @@ class TorrentTransfer(_PluginBase):
             "cron": "",
             "nolabels": "",
             "includelabels": "",
-            "frompath": "",
-            "topath": "",
             "fromdownloader": "",
-            "todownloader": "",
-            "deletesource": False,
             "fromtorrentpath": "",
+            "frompath": "",
+            "fromusername": "",
+            "frompassword": "",
+            "fromhost": "",
+            "fromport": "",
+
+            "todownloader": "",
+            "topath": "",
+            "tousername": "",
+            "topassword": "",
+            "tohost": "",
+            "toport": "",
+
+            "deletesource": False,
             "nopaths": "",
             "autostart": True,
             "transferemptylabel": False
@@ -489,26 +661,23 @@ class TorrentTransfer(_PluginBase):
     def get_page(self) -> List[dict]:
         pass
 
-    def __get_downloader(self, dtype: str):
-        """
-        根据类型返回下载器实例
-        """
+    def __get_downloader_obj(self, dtype: str):
         if dtype == "qbittorrent":
-            return self.qb
+            return Qbittorrent(self._fromhost, self._fromport, self._fromusername, self._frompassword)
         elif dtype == "transmission":
-            return self.tr
+            return Transmission(self._tohost, self._toport, self._tousername, self._topassword)
         else:
-            return None
+            return None 
 
-    def __download(self, downloader: str, content: bytes,
+    def __download(self, content: bytes,
                    save_path: str) -> Optional[str]:
         """
         添加下载任务
         """
-        if downloader == "qbittorrent":
+        if self._todownloader == "qbittorrent":
             # 生成随机Tag
             tag = StringUtils.generate_random_str(10)
-            state = self.qb.add_torrent(content=content,
+            state = self.todownloaderobj.add_torrent(content=content,
                                         download_dir=save_path,
                                         is_paused=True,
                                         tag=["已整理", "转移做种", tag])
@@ -516,14 +685,14 @@ class TorrentTransfer(_PluginBase):
                 return None
             else:
                 # 获取种子Hash
-                torrent_hash = self.qb.get_torrent_id_by_tag(tags=tag)
+                torrent_hash = self.todownloaderobj.get_torrent_id_by_tag(tags=tag)
                 if not torrent_hash:
-                    logger.error(f"{downloader} 下载任务添加成功，但获取任务信息失败！")
+                    logger.error(f"{self._todownloader} 下载任务添加成功，但获取任务信息失败！")
                     return None
             return torrent_hash
-        elif downloader == "transmission":
+        elif self._todownloader == "transmission":
             # 添加任务
-            torrent = self.tr.add_torrent(content=content,
+            torrent = self.todownloaderobj.add_torrent(content=content,
                                           download_dir=save_path,
                                           is_paused=True,
                                           labels=["已整理", "转移做种"])
@@ -532,7 +701,7 @@ class TorrentTransfer(_PluginBase):
             else:
                 return torrent.hashString
 
-        logger.error(f"不支持的下载器：{downloader}")
+        logger.error(f"不支持的下载器：{self._todownloader}")
         return None
 
     def transfer(self):
@@ -543,11 +712,13 @@ class TorrentTransfer(_PluginBase):
 
         # 源下载器
         downloader = self._fromdownloader
+        downloader_obj = self.fromdownloaderobj
+
         # 目的下载器
         todownloader = self._todownloader
-
+        todownloader_obj = self.todownloaderobj
+        
         # 获取下载器中已完成的种子
-        downloader_obj = self.__get_downloader(downloader)
         torrents = downloader_obj.get_completed_torrents()
         if torrents:
             logger.info(f"下载器 {downloader} 已完成种子数：{len(torrents)}")
@@ -641,7 +812,6 @@ class TorrentTransfer(_PluginBase):
                     continue
 
                 # 查询hash值是否已经在目的下载器中
-                todownloader_obj = self.__get_downloader(todownloader)
                 torrent_info, _ = todownloader_obj.get_torrents(ids=[torrent_item.get('hash')])
                 if torrent_info:
                     logger.info(f"{torrent_item.get('hash')} 已在目的下载器中，跳过 ...")
@@ -707,7 +877,7 @@ class TorrentTransfer(_PluginBase):
 
                 # 发送到另一个下载器中下载：默认暂停、传输下载路径、关闭自动管理模式
                 logger.info(f"添加转移做种任务到下载器 {todownloader}：{torrent_file}")
-                download_id = self.__download(downloader=todownloader,
+                download_id = self.__download(
                                               content=torrent_file.read_bytes(),
                                               save_path=download_dir)
                 if not download_id:
@@ -725,6 +895,7 @@ class TorrentTransfer(_PluginBase):
                         todownloader_obj.recheck_torrents(ids=[download_id])
 
                     # 追加校验任务
+                    # todo：该情况下用下载器类型做key无意义
                     logger.info(f"添加校验检查任务：{download_id} ...")
                     if not self._recheck_torrents.get(todownloader):
                         self._recheck_torrents[todownloader] = []
@@ -738,6 +909,7 @@ class TorrentTransfer(_PluginBase):
                     # 成功计数
                     success += 1
                     # 插入转种记录
+                    # todo
                     history_key = "%s-%s" % (self._fromdownloader, torrent_item.get('hash'))
                     self.save_data(key=history_key,
                                    value={
@@ -785,7 +957,7 @@ class TorrentTransfer(_PluginBase):
         self._is_recheck_running = True
 
         # 获取任务
-        downloader_obj = self.__get_downloader(downloader)
+        downloader_obj = self.todownloaderobj
         torrents, _ = downloader_obj.get_torrents(ids=recheck_torrents)
         if torrents:
             # 可做种的种子
