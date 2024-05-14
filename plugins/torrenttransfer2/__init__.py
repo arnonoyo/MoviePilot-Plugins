@@ -22,15 +22,15 @@ class TorrentTransfer2(_PluginBase):
     # 插件名称
     plugin_name = "自动转移做种"
     # 插件描述
-    plugin_desc = "定期转移下载器中的做种任务到另一个下载器。"
+    plugin_desc = "定期转移下载器中的做种任务到另一个下载器。(基于官方插件TorrentTransfer二次开发)"
     # 插件图标
     plugin_icon = "seed.png"
     # 插件版本
     plugin_version = "1.3.1"
     # 插件作者
-    plugin_author = "jxxghp"
+    plugin_author = "jxxghp,tk"
     # 作者主页
-    author_url = "https://github.com/jxxghp"
+    author_url = "https://github.com/arnonoyo"
     # 插件配置项ID前缀
     plugin_config_prefix = "torrenttransfer2_"
     # 加载顺序
