@@ -1,10 +1,16 @@
 from app.plugins import _PluginBase
-from typing import Any, List, Dict, Tuple
+from typing import Any, List, Dict, Tuple, Optional
 from app.log import logger
 from app.schemas import NotificationType
 from app import schemas
 from app.core.config import settings
+from pydantic import BaseModel
 
+class notifyInfo(BaseModel):
+    apikey: str
+    text: str
+    title: Optional[str] = "webhook通知"
+    
 class TransferHookNotify(_PluginBase):
     # 插件名称
     plugin_name = "转发webhook通知"
@@ -34,10 +40,13 @@ class TransferHookNotify(_PluginBase):
             self._enabled = config.get("enabled")
             self._notify = config.get("notify")
 
+    def send_notify_get(self, apikey: str, text: str, title: str = 'webhook通知') -> schemas.Response:
+        return self.send_notify(apikey, text, title)
+
+    def send_notify_post(self, data: notifyInfo) -> schemas.Response:
+        return self.send_notify(data.apikey, data.text, data.title)
+
     def send_notify(self, apikey: str, text: str, title: str = 'webhook通知') -> schemas.Response:
-        """
-        发送通知
-        """
         if apikey != settings.API_TOKEN:
             return schemas.Response(success=False, message="API密钥错误")
         
@@ -53,6 +62,7 @@ class TransferHookNotify(_PluginBase):
             success=True,
             message="发送成功"
         )
+    
 
     def get_state(self) -> bool:
         return self._enabled
@@ -71,10 +81,18 @@ class TransferHookNotify(_PluginBase):
             "summary": "API说明"
         }]
         """
-        return [{
+        return [
+        {
             "path": "/webhook",
-            "endpoint": self.send_notify,
-            "methods": ["GET", "POST"],
+            "endpoint": self.send_notify_get,
+            "methods": ["GET"],
+            "summary": "转发Webhook通知",
+            "description": "接收webhook通知并推送",
+        },
+        {
+            "path": "/webhook",
+            "endpoint": self.send_notify_post,
+            "methods": ["POST"],
             "summary": "转发Webhook通知",
             "description": "接收webhook通知并推送",
         }]
