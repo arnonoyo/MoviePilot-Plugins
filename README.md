@@ -28,4 +28,8 @@ http://{ip}:3001/api/v1/plugin/TransferHookNotify/postwebhook
 ```
 ### 场景
 - apprise自定义通知，通过该插件将请求转发到mp应用中
-  - Configuration配置: `json://{ip}:3001/api/v1/plugin/TransferHookNotify/postwebhook?:apikey={API_TOKEN}&:version&:type&:message=text`
+  - Configuration配置：`json://{ip}:3001/api/v1/plugin/TransferHookNotify/postwebhook?:apikey={API_TOKEN}&:version&:type&:message=text`
+- qd-today自定义推送，通过该插件将请求转发到mp应用中
+  - 工具箱-自定义推送：请求方式get，URL: `http://{ip}:3001/api/v1/plugin/TransferHookNotify/webhook?apikey={API_TOKEN}&title={t}&text={log}`
+    - {log}是占位符，不可调整
+    - {t}如果不想用qb的，可以替换为固定值，例：【签到保号】
