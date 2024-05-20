@@ -74,7 +74,7 @@ class TransferHookNotify(_PluginBase):
         return [{
             "path": "/webhook",
             "endpoint": self.send_notify,
-            "methods": ["GET"],
+            "methods": ["GET", "POST"],
             "summary": "转发Webhook通知",
             "description": "接收webhook通知并推送",
         }]
