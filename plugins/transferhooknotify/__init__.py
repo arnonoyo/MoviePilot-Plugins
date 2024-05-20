@@ -156,9 +156,9 @@ class TransferHookNotify(_PluginBase):
                                         'props': {
                                             'type': 'info',
                                             'variant': 'tonal',
-                                            'text': 'get http://ip:3001/api/v1/plugin/TransferHookNotify/webhook?apikey=API_TOKEN&title=自定义标题&text=内容'
-                                                    'post http://ip:3001/api/v1/plugin/TransferHookNotify/postwebhook'
-                                                    '更多内容查看github。此插件安装完需要重启生效api。'
+                                            'text': 'get方式 http://ip:3001/api/v1/plugin/TransferHookNotify/webhook?apikey=API_TOKEN&title=自定义标题&text=内容 。'
+                                                    'post方式 http://ip:3001/api/v1/plugin/TransferHookNotify/postwebhook 。'
+                                                    '更多内容查看github，此插件安装完需要重启生效api。'
                                         }
                                     }
                                 ]
