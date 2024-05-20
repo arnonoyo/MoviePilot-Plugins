@@ -15,12 +15,13 @@
         "name": "转发webhook通知",
         "description": "接收webhook通知并推送。(基于SynologyNotify二次开发)",
         "labels": "消息通知",
-        "version": "1.0",
+        "version": "1.0.1",
         "icon": "webhook.png",
         "author": "thsrite,tk",
         "level": 1,
         "history": {
-            "v1.0": "允许自定义通知标题"
+            "v1.0": "允许自定义通知标题",
+            "v1.0.1": "校验apikey"
         }
     }
 }

@@ -3,6 +3,7 @@ from typing import Any, List, Dict, Tuple
 from app.log import logger
 from app.schemas import NotificationType
 from app import schemas
+from app.core.config import settings
 
 class TransferHookNotify(_PluginBase):
     # 插件名称
@@ -12,7 +13,7 @@ class TransferHookNotify(_PluginBase):
     # 插件图标
     plugin_icon = "webhook.png"
     # 插件版本
-    plugin_version = "1.0"
+    plugin_version = "1.0.1"
     # 插件作者
     plugin_author = "thsrite,tk"
     # 作者主页
@@ -33,11 +34,15 @@ class TransferHookNotify(_PluginBase):
             self._enabled = config.get("enabled")
             self._notify = config.get("notify")
 
-    def send_notify(self, text: str, title: str = 'webhook通知') -> schemas.Response:
+    def send_notify(self, apikey: str, text: str, title: str = 'webhook通知') -> schemas.Response:
         """
         发送通知
         """
+        if apikey != settings.API_TOKEN:
+            return schemas.Response(success=False, message="API密钥错误")
+        
         logger.info(f"webhook: {text}")
+
         if self._enabled:
             text = text.replace('\r\n', '\n')
             self.post_message(title=title,
@@ -133,8 +138,8 @@ class TransferHookNotify(_PluginBase):
                                         'props': {
                                             'type': 'info',
                                             'variant': 'tonal',
-                                            'text': 'webhook配置http://ip:3001/api/v1/plugin/TransferHookNotify/webhook?text=hello world。'
-                                                    'text参数类型是消息内容。此插件安装完需要重启生效api。消息类型默认为手动处理通知。'
+                                            'text': 'webhook配置http://ip:3001/api/v1/plugin/TransferHookNotify/webhook?title=自定义标题&text=hello world。'
+                                                    'title参数类型是标题内容，text参数类型是消息内容，更多内容查看github。此插件安装完需要重启生效api。消息类型默认为手动处理通知。'
                                         }
                                     }
                                 ]
