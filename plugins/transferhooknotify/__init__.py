@@ -39,6 +39,7 @@ class TransferHookNotify(_PluginBase):
         """
         logger.info(f"webhook: {text}")
         if self._enabled:
+            text = text.replace('\r\n', '\n')
             self.post_message(title=title,
                               mtype=NotificationType.Manual,
                               text=text)
