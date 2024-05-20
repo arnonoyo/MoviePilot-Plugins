@@ -22,7 +22,8 @@
         "history": {
             "v1.0": "允许自定义通知标题",
             "v1.0.1": "校验apikey",
-            "v1.0.2": "支持post请求"
+            "v1.0.2": "支持post请求",
+            "v1.0.3": "fix: get路由被覆盖，调整为post路由为postwebhook"
         }
     }
 }

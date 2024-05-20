@@ -19,7 +19,7 @@ class TransferHookNotify(_PluginBase):
     # 插件图标
     plugin_icon = "webhook.png"
     # 插件版本
-    plugin_version = "1.0.2"
+    plugin_version = "1.0.3"
     # 插件作者
     plugin_author = "thsrite,tk"
     # 作者主页
@@ -90,7 +90,7 @@ class TransferHookNotify(_PluginBase):
             "description": "接收webhook通知并推送",
         },
         {
-            "path": "/webhook",
+            "path": "/postwebhook",
             "endpoint": self.send_notify_post,
             "methods": ["POST"],
             "summary": "转发Webhook通知",
@@ -156,8 +156,9 @@ class TransferHookNotify(_PluginBase):
                                         'props': {
                                             'type': 'info',
                                             'variant': 'tonal',
-                                            'text': 'webhook配置http://ip:3001/api/v1/plugin/TransferHookNotify/webhook?title=自定义标题&text=hello world。'
-                                                    'title参数类型是标题内容，text参数类型是消息内容，更多内容查看github。此插件安装完需要重启生效api。消息类型默认为手动处理通知。'
+                                            'text': 'get http://ip:3001/api/v1/plugin/TransferHookNotify/webhook?apikey=API_TOKEN&title=自定义标题&text=内容'
+                                                    'post http://ip:3001/api/v1/plugin/TransferHookNotify/postwebhook'
+                                                    '更多内容查看github。此插件安装完需要重启生效api。'
                                         }
                                     }
                                 ]
@@ -178,7 +179,7 @@ class TransferHookNotify(_PluginBase):
                                         'props': {
                                             'type': 'info',
                                             'variant': 'tonal',
-                                            'text': '如安装完插件后，发送webhook提示404，重启MoviePilot即可。'
+                                            'text': '如安装完插件后，发送webhook提示404/405，重启MoviePilot即可。'
                                         }
                                     }
                                 ]
